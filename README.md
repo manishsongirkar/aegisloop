@@ -217,7 +217,14 @@ Pass `heal: false` to force the first mode.
 `~/.cursor/mcp.json` (global) or `.cursor/mcp.json` (project):
 
 ```json
-{ "mcpServers": { "aegisloop": { "command": "aegis", "args": ["mcp"] } } }
+{
+  "mcpServers": {
+    "aegisloop": {
+      "command": "aegis",
+      "args": ["mcp"]
+    }
+  }
+}
 ```
 
 Then add a rule (Settings → Rules, or `.cursor/rules/aegisloop.mdc`):
@@ -228,7 +235,15 @@ Then add a rule (Settings → Rules, or `.cursor/rules/aegisloop.mdc`):
 `.vscode/mcp.json`:
 
 ```json
-{ "servers": { "aegisloop": { "type": "stdio", "command": "aegis", "args": ["mcp"] } } }
+{
+  "servers": {
+    "aegisloop": {
+      "type": "stdio",
+      "command": "aegis",
+      "args": ["mcp"]
+    }
+  }
+}
 ```
 
 Open Copilot Chat in *Agent* mode, enable the `aegisloop` tools in the tool picker, and add the same instruction to
@@ -243,7 +258,14 @@ claude mcp add aegisloop -- aegis mcp          # add --scope project to share it
 or commit `.mcp.json`:
 
 ```json
-{ "mcpServers": { "aegisloop": { "command": "aegis", "args": ["mcp"] } } }
+{
+  "mcpServers": {
+    "aegisloop": {
+      "command": "aegis",
+      "args": ["mcp"]
+    }
+  }
+}
 ```
 
 and put in `CLAUDE.md`: *"Before finishing any task that changes code, run the `verify_and_heal_patch` tool."*
