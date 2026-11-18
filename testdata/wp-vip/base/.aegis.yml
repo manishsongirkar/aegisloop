@@ -1,0 +1,29 @@
+version: 1
+language: php
+max_retries: 3
+strict_tabs: true
+strict_short_arrays: true
+context_lines: 10
+sandbox:
+  dir: .aegis-sandbox
+  on_failure: preserve
+guard:
+  enabled: true
+llm:
+  provider: none
+fixers:
+  - name: tabs
+    run: "builtin:tabs"
+    extensions: [php]
+  - name: short-arrays
+    run: "builtin:short-arrays"
+    extensions: [php]
+checks:
+  - name: standards
+    run: "builtin:standards"
+    kind: security
+    extensions: [php]
+  - name: php-lint
+    run: "php -l {file}"
+    kind: lint
+    extensions: [php]

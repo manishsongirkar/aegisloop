@@ -1,0 +1,20 @@
+function acme_get_posts_html( $author_id ) {
+	global $wpdb;
+	$args      = [
+		'author' => $author_id,
+		'limit'  => 5,
+		'extra'  => [ 'a', 'b' ],
+	];
+	$cache_key = 'acme_posts_' . absint( $author_id );
+	$rows      = wp_cache_get( $cache_key, 'acme' );
+	if ( false === $rows ) {
+		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT ID, post_title FROM {$wpdb->posts} WHERE post_author = %d LIMIT 5", $author_id ) );
+		wp_cache_set( $cache_key, $rows, 'acme', 300 );
+	}
+	$title = isset( $_GET['title'] ) ? sanitize_text_field( wp_unslash( $_GET['title'] ) ) : '';
+	foreach ( $rows as $row ) {
+		echo '<li>' . esc_html( $row->post_title ) . '</li>';
+	}
+	echo esc_html( $title );
+	return $args;
+}

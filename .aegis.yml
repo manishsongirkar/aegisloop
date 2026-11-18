@@ -1,0 +1,51 @@
+# AegisLoop configuration (see README.md for the full reference)
+version: 1
+language: go
+
+# Circuit breaker: maximum number of LLM heal attempts per run.
+max_retries: 3
+# Print a warning when the estimated prompt tokens of one run exceed this.
+token_budget_alert: 20000
+# Lines of context kept around an error when no enclosing function is found.
+context_lines: 10
+# Enclosing blocks longer than this are cut to a window plus the signature.
+max_slice_lines: 120
+timeout_seconds: 300
+
+# Built-in standards (applied to added/changed lines only).
+strict_tabs: false
+strict_short_arrays: false
+
+sandbox:
+  dir: .aegis-sandbox
+  # preserve = keep the worktree for inspection when healing fails; prune = delete it.
+  on_failure: preserve
+
+guard:
+  enabled: true
+  disable: []
+
+# Healing model. provider: anthropic | openai | ollama | command | none
+# With provider none, AegisLoop still runs the free local gates and returns a
+# compact fix request for the calling editor/agent (MCP mode).
+llm:
+  provider: none
+  max_tokens: 4096
+  timeout_seconds: 120
+
+# Zero-token local fixers. Run before every verification.
+fixers:
+  - name: gofmt
+    run: "gofmt -w {files}"
+    extensions: [go]
+
+# Verification gates. Run after the fixers.
+checks:
+  - name: go-vet
+    run: "go vet ./..."
+    kind: lint
+    extensions: [go]
+  - name: go-test
+    run: "go test ./..."
+    kind: test
+    extensions: [go]
