@@ -312,9 +312,9 @@ func TestFixGeneratesThenVerifies(t *testing.T) {
 func TestNothingToVerify(t *testing.T) {
 	repo := testutil.NewRepo(t, testutil.LoadDir(t, filepath.Join(fixtureDir, "base")))
 	cfg, _, _ := config.Load(repo)
-	_, err := RunPipeline(context.Background(), PipelineOptions{RepoDir: repo, Cfg: cfg})
-	if err == nil || !strings.Contains(err.Error(), "nothing to verify") {
-		t.Fatalf("%v", err)
+	res, err := RunPipeline(context.Background(), PipelineOptions{RepoDir: repo, Cfg: cfg})
+	if err != nil || res.Result == nil || res.Status != StatusNothing || !strings.Contains(Format(res), "NOTHING TO VERIFY") {
+		t.Fatalf("a clean tree is not an error: %v %+v", err, res)
 	}
 	if _, err := os.Stat(filepath.Join(repo, ".aegis-sandbox")); err == nil {
 		t.Fatal("sandbox left behind")

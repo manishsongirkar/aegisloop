@@ -32,6 +32,8 @@ const (
 	StatusPassed   = "passed"
 	StatusFailed   = "failed"
 	StatusNeedsFix = "needs_fix" // no model configured: compact fix request returned to the caller
+	// StatusNothing means there was no change to verify (clean tree, empty patch). It is not a failure.
+	StatusNothing = "nothing_to_verify"
 )
 
 // Attempt records one heal iteration.
@@ -153,7 +155,7 @@ func (h *Healer) Run(ctx context.Context) (*Result, error) {
 		}
 		skipObserve = false
 
-		payload, allowed, baseline := h.buildPayload(rep, brk.Attempts()+1, problems)
+		payload, allowed, baseline := h.buildPayload(ctx, rep, brk.Attempts()+1, problems)
 		res.Payload = &payload
 		if h.LLM == nil {
 			return finish(StatusNeedsFix, "no_llm_configured", rep)
@@ -243,7 +245,7 @@ func (h *Healer) apply(ctx context.Context, r Reply, allowed Allowed) ApplyResul
 
 // buildPayload creates the minimal fix request for the failing report and the
 // ranges the model is allowed to edit.
-func (h *Healer) buildPayload(rep *runner.Report, attempt int, problems []string) (tokenizer.Payload, Allowed, int) {
+func (h *Healer) buildPayload(ctx context.Context, rep *runner.Report, attempt int, problems []string) (tokenizer.Payload, Allowed, int) {
 	p := tokenizer.Payload{Task: h.Task, Attempt: attempt, MaxAttempts: h.Cfg.MaxRetries}
 	fails := append([]tokenizer.Failure{}, rep.Failures...)
 	sort.SliceStable(fails, func(i, j int) bool {
@@ -283,6 +285,8 @@ func (h *Healer) buildPayload(rep *runner.Report, attempt int, problems []string
 		}
 	}
 
+	h.addRelated(ctx, rep, &p, allowed)
+
 	var rawAll, outBuf strings.Builder
 	for _, c := range rep.Checks {
 		if c.Status != runner.StatusFailed {
@@ -307,6 +311,65 @@ func (h *Healer) buildPayload(rep *runner.Report, attempt int, problems []string
 		p.Task = strings.TrimSpace(p.Task + "\n\nYour previous reply could not be applied: " + strings.Join(problems, "; ") + ". Use only line ranges shown below.")
 	}
 	return p, allowed, tokenizer.Baseline(whole, rawAll.String())
+}
+
+// maxRelated bounds how many extra "code under test" slices one prompt carries.
+const maxRelated = 6
+
+// addRelated connects failing tests/builds to the code they exercise. A test
+// failure is reported at the assertion, so the slice alone never contains the
+// bug; the functions the failing code calls, taken from the files the patch
+// changed, are added (and made editable) so the model can fix the real cause.
+func (h *Healer) addRelated(ctx context.Context, rep *runner.Report, p *tokenizer.Payload, allowed Allowed) {
+	failing := map[string]bool{}
+	for _, c := range rep.Checks {
+		if c.Status != runner.StatusFailed || (c.Kind != "test" && c.Kind != "build") {
+			continue
+		}
+		for _, f := range c.Failures {
+			if f.File != "" && f.Line > 0 {
+				failing[f.File] = true
+			}
+		}
+	}
+	if len(failing) == 0 {
+		return
+	}
+	var seed strings.Builder
+	for _, s := range p.Slices {
+		if failing[s.Path] {
+			seed.WriteString(s.Text + "\n")
+		}
+	}
+	names := tokenizer.CalledNames(seed.String())
+	scope, err := h.WS.Scope(ctx)
+	if err != nil || len(names) == 0 {
+		return
+	}
+	opts := tokenizer.SliceOptions{ContextLines: h.Cfg.ContextLines, MaxLines: h.Cfg.MaxSliceLines}
+	left := maxRelated
+	for _, f := range scope.Files {
+		if left <= 0 {
+			break
+		}
+		content, err := h.WS.Read(f)
+		if err != nil {
+			continue
+		}
+		skip := func(start, end int) bool {
+			for _, r := range allowed[f] {
+				if start <= r.End && end >= r.Start {
+					return true
+				}
+			}
+			return false
+		}
+		for _, s := range tokenizer.RelatedSlices(f, content, names, skip, opts, left) {
+			p.Slices = append(p.Slices, s)
+			allowed[f] = append(allowed[f], Range{s.Start, s.End})
+			left--
+		}
+	}
 }
 
 // Generate asks the model to implement Task in the given files (full content

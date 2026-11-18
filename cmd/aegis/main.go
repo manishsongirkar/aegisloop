@@ -301,7 +301,7 @@ func cmdPipeline(ctx context.Context, cmd string, args []string, stdin io.Reader
 		return exitUsage, err
 	}
 	switch res.Status {
-	case healer.StatusPassed:
+	case healer.StatusPassed, healer.StatusNothing:
 		return exitOK, nil
 	case healer.StatusNeedsFix:
 		return exitNeedsFix, nil

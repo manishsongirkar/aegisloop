@@ -23,6 +23,9 @@ type Slice struct {
 	// Elided is set when the enclosing block was too long: Text then holds the
 	// signature lines, a marker and a window around the error.
 	Elided bool `json:"elided,omitempty"`
+	// Related marks code that did not fail itself but is called by failing
+	// test/build code, so the model can fix the real cause.
+	Related bool `json:"related,omitempty"`
 }
 
 // Numbered renders the slice with file line numbers ("  12| code").

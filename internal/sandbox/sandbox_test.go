@@ -300,3 +300,60 @@ func TestSubdirectoryRepoRoot(t *testing.T) {
 		t.Skip("git missing")
 	}
 }
+
+func TestPromoteRefusesWhenADifferentFileDrifted(t *testing.T) {
+	repo := testutil.NewRepo(t, map[string]string{"a.txt": "one\n", "b.txt": "x\n"})
+	testutil.WriteFiles(t, repo, map[string]string{"a.txt": "dirty\n"})
+	sb, _ := Create(ctx, repo, Options{})
+	defer sb.Prune(ctx)
+	sb.Write("a.txt", "fixed\n")
+	// a file AegisLoop does not touch changes mid-run: the verdict is stale
+	testutil.WriteFiles(t, repo, map[string]string{"b.txt": "edited by the developer\n"})
+	drift, _ := sb.Drift(ctx)
+	if len(drift) != 1 || drift[0] != "b.txt" {
+		t.Fatalf("drift = %v", drift)
+	}
+	if _, err := sb.Promote(ctx); err == nil || !strings.Contains(err.Error(), "b.txt") {
+		t.Fatalf("expected a drift error naming b.txt, got %v", err)
+	}
+	if got := testutil.ReadFile(t, repo, "a.txt"); got != "dirty\n" {
+		t.Fatalf("nothing may be written on drift: %q", got)
+	}
+}
+
+func TestDriftDetectsNewUntrackedRevertAndCommit(t *testing.T) {
+	repo := testutil.NewRepo(t, map[string]string{"a.txt": "one\n"})
+	testutil.WriteFiles(t, repo, map[string]string{"a.txt": "dirty\n"})
+	sb, _ := Create(ctx, repo, Options{})
+	defer sb.Prune(ctx)
+	if d, _ := sb.Drift(ctx); len(d) != 0 {
+		t.Fatalf("no drift expected right after Create: %v", d)
+	}
+	testutil.WriteFiles(t, repo, map[string]string{"new.txt": "n\n"})
+	testutil.Git(t, repo, "checkout", "a.txt") // revert
+	d, _ := sb.Drift(ctx)
+	if !reflect.DeepEqual(d, []string{"a.txt", "new.txt"}) {
+		t.Fatalf("drift = %v", d)
+	}
+}
+
+// A heal edit that restores a file to its HEAD content must not drop the file
+// from the verification scope (the gates would be skipped and still "pass").
+func TestScopeKeepsFileHealedBackToHead(t *testing.T) {
+	repo := testutil.NewRepo(t, map[string]string{"a.go": "good\n", "b.go": "b\n"})
+	testutil.WriteFiles(t, repo, map[string]string{"a.go": "broken\n"})
+	sb, _ := Create(ctx, repo, Options{ScopeToWorkingTree: true})
+	defer sb.Prune(ctx)
+	if f, _ := sb.ScopeFiles(ctx); !reflect.DeepEqual(f, []string{"a.go"}) {
+		t.Fatalf("scope before heal: %v", f)
+	}
+	sb.Write("a.go", "good\n") // identical to HEAD again
+	f, _ := sb.ScopeFiles(ctx)
+	if !reflect.DeepEqual(f, []string{"a.go"}) {
+		t.Fatalf("a healed file must stay in scope, got %v", f)
+	}
+	lines, _ := sb.ChangedLines(ctx)
+	if _, ok := lines["a.go"]; !ok {
+		t.Fatalf("ChangedLines must keep a.go: %v", lines)
+	}
+}

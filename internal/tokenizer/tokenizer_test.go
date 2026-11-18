@@ -2,6 +2,7 @@ package tokenizer
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -369,5 +370,24 @@ func TestPayloadMarkdownAndJSON(t *testing.T) {
 	}
 	if Baseline(map[string]string{"a": strings.Repeat("x", 400)}, strings.Repeat("y", 40)) != 110 {
 		t.Fatal("Baseline")
+	}
+}
+
+func TestRelatedSlicesFindsCalledFunctionsOnly(t *testing.T) {
+	src := "package p\n\nfunc Add(a, b int) int { return a - b }\n\nfunc Other() int {\n\treturn 1\n}\n\nfunc Sum(x Add) int { return 0 }\n"
+	names := CalledNames("func TestAdd(t *testing.T) {\n\tif Add(1, 2) != 3 {\n\t\tt.Fatal(\"bad\")\n\t}\n}")
+	if !reflect.DeepEqual(names, []string{"Add", "Fatal"}) {
+		t.Fatalf("called names: %v", names)
+	}
+	got := RelatedSlices("add.go", src, names, nil, SliceOptions{}, 5)
+	if len(got) != 1 || !got[0].Related || got[0].Start != 3 || !strings.Contains(got[0].Text, "a - b") {
+		t.Fatalf("want only Add, got %+v", got)
+	}
+	if got := RelatedSlices("add.go", src, names, func(s, e int) bool { return s == 3 }, SliceOptions{}, 5); len(got) != 0 {
+		t.Fatalf("already-shown blocks must be skipped: %+v", got)
+	}
+	php := "<?php\nfunction render_title( $p ) {\n\treturn $p;\n}\n"
+	if got := RelatedSlices("a.php", php, []string{"render_title"}, nil, SliceOptions{}, 5); len(got) != 1 {
+		t.Fatalf("php: %+v", got)
 	}
 }

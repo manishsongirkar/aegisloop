@@ -6,6 +6,8 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -41,6 +43,8 @@ type Sandbox struct {
 	links    []string
 
 	scopeToWorking bool
+	snap           map[string]string // fingerprint of the developer's tree when the sandbox was created
+
 }
 
 // ErrNotGit is returned when the project is not inside a git work tree.
@@ -101,6 +105,10 @@ func Create(ctx context.Context, repoRoot string, opts Options) (*Sandbox, error
 		return nil, fmt.Errorf("git worktree add: %w", err)
 	}
 	if err := s.syncWorkingTree(ctx); err != nil {
+		_ = s.Prune(ctx)
+		return nil, err
+	}
+	if s.snap, err = s.fingerprint(ctx); err != nil {
 		_ = s.Prune(ctx)
 		return nil, err
 	}
@@ -346,8 +354,38 @@ func (s *Sandbox) ChangedFiles(ctx context.Context) ([]string, error) {
 }
 
 // ScopeFiles lists the files the verification scope covers (see Options).
+// It is the union of what differs from the scope reference, what AegisLoop
+// changed, and the files that were dirty when the run started and still exist.
+// The union matters: when a heal edit puts a file back to its HEAD content the
+// file must stay in scope, otherwise every gate would be skipped and the run
+// would pass without re-verifying anything.
 func (s *Sandbox) ScopeFiles(ctx context.Context) ([]string, error) {
-	return s.changedFiles(ctx, s.scopeRef())
+	set := map[string]bool{}
+	for _, ref := range []string{s.scopeRef(), s.Baseline} {
+		fs, err := s.changedFiles(ctx, ref)
+		if err != nil {
+			return nil, err
+		}
+		for _, f := range fs {
+			set[f] = true
+		}
+	}
+	if s.scopeToWorking {
+		for f := range s.snap {
+			if f == "HEAD" {
+				continue
+			}
+			if _, err := os.Lstat(filepath.Join(s.Path, f)); err == nil {
+				set[filepath.ToSlash(f)] = true
+			}
+		}
+	}
+	out := make([]string, 0, len(set))
+	for f := range set {
+		out = append(out, f)
+	}
+	sort.Strings(out)
+	return out, nil
 }
 
 func (s *Sandbox) changedFiles(ctx context.Context, ref string) ([]string, error) {
@@ -375,7 +413,7 @@ var hunkRe = regexp.MustCompile(`^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@`)
 // line" (new files).
 func (s *Sandbox) ChangedLines(ctx context.Context) (map[string]map[int]bool, error) {
 	ref := s.scopeRef()
-	files, err := s.changedFiles(ctx, ref)
+	files, err := s.ScopeFiles(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -444,6 +482,17 @@ func (s *Sandbox) Promote(ctx context.Context) (changed []string, err error) {
 	if err != nil {
 		return nil, err
 	}
+	// The result was verified against a snapshot of the tree. If anything in
+	// the tree moved since then (any file, not only the ones being written),
+	// the verdict no longer describes it, so write nothing.
+	drift, err := s.Drift(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if len(drift) > 0 {
+		return nil, fmt.Errorf("the working tree changed while AegisLoop was running (%s); nothing was written and the verified patch was kept at %s — re-run `aegis verify`, or `git apply` it after resolving",
+			describeDrift(drift), filepath.Join(s.Parent, s.ID+".patch"))
+	}
 	if _, err := git(ctx, s.RepoRoot, strings.NewReader(d), "apply", "--whitespace=nowarn", "--check", "-"); err != nil {
 		return nil, fmt.Errorf("the working tree changed while AegisLoop was running; the verified patch was kept at %s: %w", filepath.Join(s.Parent, s.ID+".patch"), err)
 	}
@@ -451,6 +500,86 @@ func (s *Sandbox) Promote(ctx context.Context) (changed []string, err error) {
 		return nil, err
 	}
 	return files, nil
+}
+
+// fingerprint maps every dirty path of the developer's tree (and HEAD) to a
+// content hash.
+func (s *Sandbox) fingerprint(ctx context.Context) (map[string]string, error) {
+	fp := map[string]string{}
+	head, err := git(ctx, s.RepoRoot, nil, "rev-parse", "HEAD")
+	if err != nil {
+		return nil, err
+	}
+	fp["HEAD"] = strings.TrimSpace(head)
+	out, err := git(ctx, s.RepoRoot, nil, "status", "--porcelain=v1", "-z", "--untracked-files=all")
+	if err != nil {
+		return nil, err
+	}
+	entries := strings.Split(out, "\x00")
+	for i := 0; i < len(entries); i++ {
+		e := entries[i]
+		if len(e) < 4 {
+			continue
+		}
+		if e[0] == 'R' || e[0] == 'C' {
+			i++
+		}
+		path := e[3:]
+		if strings.HasPrefix(filepath.ToSlash(path), strings.Trim(filepath.ToSlash(filepath.Base(s.Parent)), "/")+"/") {
+			continue
+		}
+		fp[path] = hashPath(filepath.Join(s.RepoRoot, path))
+	}
+	return fp, nil
+}
+
+func hashPath(p string) string {
+	info, err := os.Lstat(p)
+	if err != nil {
+		return "missing"
+	}
+	if info.Mode()&os.ModeSymlink != 0 {
+		t, _ := os.Readlink(p)
+		return "link:" + t
+	}
+	if info.IsDir() {
+		return "dir"
+	}
+	data, err := os.ReadFile(p)
+	if err != nil {
+		return "unreadable"
+	}
+	sum := sha256.Sum256(data)
+	return hex.EncodeToString(sum[:])
+}
+
+// Drift lists the paths whose state differs from the snapshot taken when the
+// sandbox was created ("HEAD" if the checked-out commit moved).
+func (s *Sandbox) Drift(ctx context.Context) ([]string, error) {
+	now, err := s.fingerprint(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var out []string
+	for k, v := range now {
+		if s.snap[k] != v {
+			out = append(out, k)
+		}
+	}
+	for k := range s.snap {
+		if _, ok := now[k]; !ok {
+			out = append(out, k) // a dirty file was reverted or committed
+		}
+	}
+	sort.Strings(out)
+	return out, nil
+}
+
+func describeDrift(files []string) string {
+	if len(files) > 3 {
+		return strings.Join(files[:3], ", ") + fmt.Sprintf(" and %d more", len(files)-3)
+	}
+	return strings.Join(files, ", ")
 }
 
 // ---- lifecycle --------------------------------------------------------------

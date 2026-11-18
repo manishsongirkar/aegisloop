@@ -117,7 +117,13 @@ func RunPipeline(ctx context.Context, o PipelineOptions) (*PipelineResult, error
 	if sc, err := ws.Scope(ctx); err != nil {
 		return fail(err)
 	} else if len(sc.Files) == 0 {
-		return fail(errors.New("nothing to verify: the patch/prompt produced no file changes"))
+		reason := "the patch/prompt produced no file changes"
+		if strings.TrimSpace(o.Patch) == "" && strings.TrimSpace(o.Task) == "" {
+			reason = "no uncommitted changes in the working tree (edit files, or pass a patch with `aegis run --patch`)"
+		}
+		out.Result = &Result{Status: StatusNothing, Reason: reason}
+		_ = sb.Prune(cleanupCtx)
+		return out, nil
 	}
 
 	res, runErr := h.Run(ctx)

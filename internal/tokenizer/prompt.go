@@ -67,7 +67,7 @@ func (p Payload) Markdown() string {
 		fmt.Fprintf(&b, "\n## Tool output (noise stripped)\n```\n%s\n```\n", p.Output)
 	}
 	if len(p.Slices) > 0 {
-		b.WriteString("\n## Code (only the failing regions)\n")
+		b.WriteString("\n## Code (failing regions, plus the changed functions they call)\n")
 		slices := append([]Slice{}, p.Slices...)
 		sort.SliceStable(slices, func(i, j int) bool {
 			if slices[i].Path != slices[j].Path {
@@ -80,7 +80,11 @@ func (p Payload) Markdown() string {
 			if s.Signature != "" {
 				sig = " — `" + s.Signature + "`"
 			}
-			fmt.Fprintf(&b, "\n### %s lines %d-%d (%s)%s\n```\n%s```\n", s.Path, s.Start, s.End, s.Kind, sig, s.Numbered())
+			kind := s.Kind
+			if s.Related {
+				kind += ", called by the failing code"
+			}
+			fmt.Fprintf(&b, "\n### %s lines %d-%d (%s)%s\n```\n%s```\n", s.Path, s.Start, s.End, kind, sig, s.Numbered())
 		}
 	}
 	b.WriteString("\n## Reply format\n" + ReplyFormat + "\n")

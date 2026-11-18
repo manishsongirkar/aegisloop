@@ -178,7 +178,7 @@ heal attempt 1/3: 5 failure(s), ~540 prompt tokens via anthropic:claude-sonnet-5
 
 | Code | Meaning |
 |---|---|
-| `0` | All gates passed; result written to the working tree (unless `--dry-run`) |
+| `0` | All gates passed and the result was written to the working tree (unless `--dry-run`), or there was nothing to verify (clean tree, empty patch) |
 | `1` | Verification failed or the circuit breaker tripped (diagnostics printed, working tree untouched) |
 | `2` | No LLM configured/allowed: free local fixes were applied, a compact fix request was printed |
 | `3` | Usage, configuration or infrastructure error (not a git repo, bad `.aegis.yml`, patch rejected…) |
@@ -303,6 +303,11 @@ signature), numbered with real file line numbers:
   are skipped in favour of the function around them.
 - A failing line in a class body (not a method) gets a ±`context_lines` window; a function longer than
   `max_slice_lines` is reduced to *signature + window around the error + omission markers*. Overlapping slices merge.
+
+**Code under test.** A failing test is reported at its assertion, not at the bug. For `test` and `build` checks, AegisLoop
+also takes the names called by the failing slice and adds the matching functions from the files the patch changed
+(marked *called by the failing code*, at most 6 per prompt). They are editable, so the model can fix the real cause
+instead of the test. Only files in the verification scope are searched; a bug in a file you did not touch is not shown.
 
 The model may only edit line ranges it was shown (`aegis-replace path start-end` blocks; SEARCH/REPLACE blocks and
 unified diffs are accepted too), so a confused model cannot vandalise the rest of the file.
@@ -556,8 +561,12 @@ still gets the free gates. Install the tool (Composer: `composer require --dev �
 **`check standards failed` but my line is fine.** The guard is heuristic. Add `// aegis:ignore` (or `// phpcs:ignore`) on that
 line or the one above, or switch the rule off in `guard.disable`.
 
-**`the working tree changed while AegisLoop was running`.** You edited the same lines during the run. Nothing was
-written; the verified patch is at `.aegis-sandbox/<id>.patch` — `git apply` it after resolving, then `aegis clean`.
+**`the working tree changed while AegisLoop was running`.** A file in your checkout (any file, not only the ones being
+written) or `HEAD` changed after the run started, so the verdict no longer describes your tree. Nothing was written; the
+error names the files. Re-run `aegis verify`, or `git apply .aegis-sandbox/<id>.patch` after resolving, then `aegis clean`.
+
+**`NOTHING TO VERIFY`.** There are no uncommitted changes (or the patch changed nothing). This is not a failure (exit `0`).
+If a run says `PASSED` with a note that *no fixer or check applied*, the changed files matched no step's `extensions`.
 
 **What does each circuit-breaker halt mean?** See the table in [5.5](#55-bounded-self-healing-loop--circuit-breaker).
 `no_progress` and `thrashing_detected` mean the model is not converging — fix the remaining items by hand (they are

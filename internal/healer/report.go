@@ -12,6 +12,8 @@ func Format(p *PipelineResult) string {
 	}
 	var b strings.Builder
 	switch p.Status {
+	case StatusNothing:
+		return "✔ NOTHING TO VERIFY — " + p.Reason + "\n"
 	case StatusPassed:
 		b.WriteString("✔ PASSED — every gate is green\n")
 	case StatusNeedsFix:
@@ -30,6 +32,9 @@ func Format(p *PipelineResult) string {
 	}
 	if p.Tokens.Sent > 0 || p.Tokens.Baseline > 0 {
 		fmt.Fprintf(&b, "  tokens: ~%d sent, ~%d received; a naive loop would send ~%d (%.0f%% saved)\n", p.Tokens.Sent, p.Tokens.Received, p.Tokens.Baseline, p.Tokens.SavedPercent)
+	}
+	if p.Status == StatusPassed && !ranAnyStep(p.Steps) {
+		b.WriteString("  note: no fixer or check applied to the changed files, so nothing was actually verified\n")
 	}
 	b.WriteString("  steps:\n")
 	for _, s := range p.Steps {
@@ -92,4 +97,15 @@ func reasonText(r string) string {
 		return "interrupted"
 	}
 	return r
+}
+
+// ranAnyStep reports whether at least one fixer or check actually executed.
+func ranAnyStep(steps []StepSummary) bool {
+	for _, s := range steps {
+		switch s.Status {
+		case "passed", "clean", "fixed", "failed", "warn":
+			return true
+		}
+	}
+	return false
 }

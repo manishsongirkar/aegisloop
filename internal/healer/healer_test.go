@@ -588,3 +588,44 @@ func TestCommandProvider(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 }
+
+// A failing test is reported at the assertion. The bug lives in the function
+// the test calls, which must therefore be shown and be editable.
+func TestHealFixesSourceBugExposedByFailingTest(t *testing.T) {
+	src := "package p\n\nfunc Add(a, b int) int { return a - b }\n"
+	test := "package p\n\nimport \"testing\"\n\nfunc TestAdd(t *testing.T) {\n\tif Add(1, 2) != 3 {\n\t\tt.Fatal(\"bad\")\n\t}\n}\n"
+	ws := &memWS{files: map[string]string{"add.go": src, "add_test.go": test}}
+	f := tokenizer.Failure{Step: "go-test", File: "add_test.go", Line: 7, Message: "bad", Severity: "error"}
+	ver := &fakeVerifier{ws: ws, fn: func(w *memWS, _ int) *runner.Report {
+		if strings.Contains(w.files["add.go"], "a + b") {
+			return &runner.Report{Passed: true}
+		}
+		return &runner.Report{Failures: []tokenizer.Failure{f}, Checks: []runner.StepResult{{Name: "go-test", Phase: "check", Kind: "test", Status: runner.StatusFailed, Failures: []tokenizer.Failure{f}, Raw: "--- FAIL: TestAdd\n    add_test.go:7: bad\n"}}}
+	}}
+	llm := &scriptedLLM{reply: func(_ int, _, user string) (string, error) {
+		if !strings.Contains(user, "add.go lines 3-3") || !strings.Contains(user, "called by the failing code") {
+			return "", fmt.Errorf("the function under test was not shown:\n%s", user)
+		}
+		return replaceBlock("add.go", 3, 3, "func Add(a, b int) int { return a + b }"), nil
+	}}
+	h := &Healer{Cfg: cfgWith(3), WS: ws, Verify: ver, LLM: llm}
+	res, err := h.Run(context.Background())
+	if err != nil || res.Status != StatusPassed {
+		t.Fatalf("%v %+v", err, res)
+	}
+	if !strings.Contains(ws.files["add.go"], "a + b") || ws.files["add_test.go"] != test {
+		t.Fatal("the source must be fixed and the test left alone")
+	}
+}
+
+// Lint failures are located at the offending line; no related code is added.
+func TestNoRelatedCodeForLintFailures(t *testing.T) {
+	ws := &memWS{files: map[string]string{"a.php": "<?php\nfunction a() {\n\treturn b();\n}\nfunction b() {\n\treturn 1;\n}\n"}}
+	h := &Healer{Cfg: cfgWith(3), WS: ws}
+	p, _, _ := h.buildPayload(context.Background(), failing("lint", 3), 1, nil)
+	for _, s := range p.Slices {
+		if s.Related {
+			t.Fatalf("unexpected related slice %+v", s)
+		}
+	}
+}
