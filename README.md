@@ -1,5 +1,7 @@
 # AegisLoop
 
+<p align="center"><img src="docs/aegisloop-overview.svg" alt="AegisLoop flow: AI patch, worktree, local fixers, standards guard, gates, then working tree or a bounded LLM repair loop" width="860"></p>
+
 **An AI guardrail and local self-healing verification wrapper for AI-generated code.**
 
 AegisLoop sits between your AI coding assistant and your working tree. It intercepts a patch, applies it in an

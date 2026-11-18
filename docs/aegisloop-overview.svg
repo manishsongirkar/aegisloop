@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 930 450" width="930" height="450" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif">
+  <title>AegisLoop flow</title>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#94a3b8"/></marker>
+    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#22c55e"/></marker>
+    <marker id="r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#f87171"/></marker>
+    <style>
+      .b{fill:#1e293b;stroke:#475569;stroke-width:1.5}
+      .t{fill:#f1f5f9;font-size:15px;font-weight:600;text-anchor:middle}
+      .s{fill:#94a3b8;font-size:12px;text-anchor:middle}
+      .l{stroke:#94a3b8;stroke-width:2;fill:none}
+    </style>
+  </defs>
+  <rect width="930" height="450" rx="16" fill="#0f172a"/>
+  <text x="465" y="42" class="t" style="font-size:22px">AegisLoop: verify AI code before it touches your tree</text>
+  <text x="465" y="64" class="s" style="font-size:13px">Fix locally for 0 tokens. Ask the LLM only for what is still broken.</text>
+
+  <!-- main row -->
+  <rect class="b" x="30" y="100" width="150" height="64" rx="10"/><text class="t" x="105" y="128">AI patch</text><text class="s" x="105" y="148">stdin / MCP</text>
+  <rect class="b" x="210" y="100" width="150" height="64" rx="10"/><text class="t" x="285" y="128">Git worktree</text><text class="s" x="285" y="148">isolated copy</text>
+  <rect class="b" x="390" y="100" width="150" height="64" rx="10" style="stroke:#22c55e"/><text class="t" x="465" y="128">Local fixers</text><text class="s" x="465" y="148">0 tokens</text>
+  <rect class="b" x="570" y="100" width="150" height="64" rx="10" style="stroke:#22c55e"/><text class="t" x="645" y="128">Standards guard</text><text class="s" x="645" y="148">0 tokens</text>
+  <rect class="b" x="750" y="100" width="150" height="64" rx="10" style="stroke:#38bdf8"/><text class="t" x="825" y="128">Lint / test / build</text><text class="s" x="825" y="148">your own tools</text>
+  <path class="l" d="M180 132H208" marker-end="url(#a)"/>
+  <path class="l" d="M360 132H388" marker-end="url(#a)"/>
+  <path class="l" d="M540 132H568" marker-end="url(#a)"/>
+  <path class="l" d="M720 132H748" marker-end="url(#a)"/>
+
+  <!-- green -->
+  <path class="l" d="M870 164V218" style="stroke:#22c55e" marker-end="url(#g)"/>
+  <text class="s" x="890" y="196" style="fill:#22c55e;text-anchor:start">green</text>
+  <rect class="b" x="770" y="220" width="130" height="64" rx="10" style="stroke:#22c55e;fill:#14532d"/><text class="t" x="835" y="248">Your working</text><text class="t" x="835" y="268">tree ✔</text>
+
+  <!-- red -->
+  <path class="l" d="M760 164V342H722" style="stroke:#f87171" marker-end="url(#r)"/>
+  <text class="s" x="750" y="196" style="fill:#f87171;text-anchor:end">red</text>
+  <rect class="b" x="570" y="310" width="150" height="64" rx="10"/><text class="t" x="645" y="338">Slice + strip</text><text class="s" x="645" y="358">≈15–30% of a full prompt</text>
+  <rect class="b" x="390" y="310" width="150" height="64" rx="10" style="stroke:#f59e0b"/><text class="t" x="465" y="338">LLM</text><text class="s" x="465" y="358">smallest prompt</text>
+  <rect class="b" x="210" y="310" width="150" height="64" rx="10"/><text class="t" x="285" y="338">Apply edits</text><text class="s" x="285" y="358">to the worktree</text>
+  <rect class="b" x="30" y="310" width="150" height="64" rx="10" style="stroke:#f87171"/><text class="t" x="105" y="338">Circuit breaker</text><text class="s" x="105" y="358">bounded retries</text>
+  <path class="l" d="M570 342H542" marker-end="url(#a)"/>
+  <path class="l" d="M390 342H362" marker-end="url(#a)"/>
+  <path class="l" d="M210 342H182" marker-end="url(#a)"/>
+  <path class="l" d="M105 310V166" style="stroke-dasharray:6 4" marker-end="url(#a)"/>
+  <text class="s" x="118" y="240" style="text-anchor:start">re-verify</text>
+
+  <text x="465" y="420" class="s" style="font-size:13px">Your checkout is written only after every gate is green.</text>
+</svg>
