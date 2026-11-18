@@ -9,11 +9,28 @@ what is still broken — asks an LLM for a fix using the **smallest possible pro
 circuit breaker. Your checkout is written to **only after every gate is green**.
 
 ```
-  AI patch ─▶ git worktree ─▶ local fixers ─▶ standards guard ─▶ lint/test/build ─┬─ green ─▶ your working tree
-  (stdin/MCP)  (isolated)     (0 tokens)      (0 tokens)         (your tools)       │
-                                                                                    └─ red ─▶ slice + strip ─▶ LLM ─▶ edits ─┐
-                                                                                         ▲   (≈15–30% of a naive prompt)     │
-                                                                                         └───── circuit breaker ◀────────────┘
+  AI patch (stdin / MCP)
+        │
+        ▼
+  git worktree (isolated)
+        │
+        ▼
+  local fixers (0 tokens)
+        │
+        ▼
+  standards guard (0 tokens)
+        │
+        ▼
+  lint / test / build (your tools) ◀──────────────────────┐
+        │                                                 │
+        ├── green ──▶ your working tree                   │
+        │                                                 │
+        └── red ───▶ slice + strip                        │
+                     (≈15–30% of a naive prompt)          │
+                          │                               │
+                          ▼                               │
+                         LLM ──▶ edits ──▶ circuit breaker┘
+                                           (bounded loop)
 ```
 
 - [1. Introduction & value proposition](#1-introduction--value-proposition)
