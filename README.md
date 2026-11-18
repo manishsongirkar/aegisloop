@@ -88,7 +88,7 @@ note unless you mark it `required: true`.
 ### From source (works today)
 
 ```bash
-git clone <your-fork-or-remote> ~/Projects/aegisloop     # or use the directory you already have
+git clone https://github.com/manishsongirkar/aegisloop.git ~/Projects/aegisloop
 cd ~/Projects/aegisloop
 make install                      # builds bin/aegis and bin/aegisloop, installs both to $(go env GOPATH)/bin
 # or simply:
