@@ -90,7 +90,7 @@ note unless you mark it `required: true`.
 ```bash
 git clone https://github.com/manishsongirkar/aegisloop.git ~/Projects/aegisloop
 cd ~/Projects/aegisloop
-make install                      # builds bin/aegis and bin/aegisloop, installs both to $(go env GOPATH)/bin
+make install                      # builds and installs aegis and aegisloop to $(go env GOBIN, else GOPATH/bin)
 # or simply:
 go install ./cmd/aegis            # installs `aegis`
 aegis version
@@ -98,9 +98,13 @@ aegis version
 
 `./scripts/install.sh` does the same without `make` and prints the `PATH` hint if needed.
 
+> **`aegis: command not found`?** Add the install folder to your PATH, then open a new terminal:
+> `echo 'export PATH="$(go env GOPATH)/bin:$PATH"' >> ~/.zshrc` (use `~/.bashrc` for bash).
+> `make build` only builds `bin/aegis` and `bin/aegisloop` inside the checkout, without installing them.
+
 ### Package-manager one-liners (after you publish)
 
-The repository ships the pieces for both channels; they only work once *you* have published them:
+Only the npm shim ships in this repository (`packaging/npm`); there is no Homebrew formula yet. Neither channel works until *you* publish it:
 
 ```bash
 brew install aegisloop            # needs a Homebrew tap/formula that builds ./cmd/aegis

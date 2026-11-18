@@ -375,7 +375,11 @@ func cmdPrune(args []string, stdout io.Writer) error {
 	}
 	fmt.Fprint(stdout, out.String())
 	whole, sent := tokenizer.EstimateTokens(string(data)), tokenizer.EstimateTokens(out.String())
-	if whole > 0 {
+	switch {
+	case whole <= 0:
+	case sent >= whole:
+		fmt.Fprintf(stdout, "~%d tokens; the file is only ~%d, so slicing saves nothing here\n", sent, whole)
+	default:
 		fmt.Fprintf(stdout, "~%d tokens instead of ~%d for the whole file (%.0f%% fewer)\n", sent, whole, 100*(1-float64(sent)/float64(whole)))
 	}
 	return nil

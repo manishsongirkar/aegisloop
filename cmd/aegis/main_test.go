@@ -225,6 +225,11 @@ func TestPruneCommand(t *testing.T) {
 	if code != 0 || !strings.Contains(out, "(function)") || !strings.Contains(out, "fewer") {
 		t.Fatalf("%d\n%s", code, out)
 	}
+	small := filepath.Join(t.TempDir(), "small.go")
+	os.WriteFile(small, []byte("package p\n\nfunc F() {\n\t_ = 1\n}\n"), 0o644)
+	if code, out, _ := exec(t, "", "prune", small+":4"); code != 0 || strings.Contains(out, "fewer") || !strings.Contains(out, "saves nothing") {
+		t.Fatalf("small file must not claim a saving: %d\n%s", code, out)
+	}
 	for _, bad := range [][]string{{}, {"nofile"}, {file + ":zero"}, {file + ":0"}, {"/no/such/file.php:3"}} {
 		if code, _, _ := exec(t, "", append([]string{"prune"}, bad...)...); code != exitUsage {
 			t.Errorf("%v should fail", bad)
