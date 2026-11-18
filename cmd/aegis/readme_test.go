@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"aegisloop/internal/config"
+	"github.com/manishsongirkar/aegisloop/internal/config"
 )
 
 // Every ```yaml block in the README must be a configuration AegisLoop accepts,

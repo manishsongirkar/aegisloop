@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"aegisloop/internal/config"
-	"aegisloop/internal/tokenizer"
+	"github.com/manishsongirkar/aegisloop/internal/config"
+	"github.com/manishsongirkar/aegisloop/internal/tokenizer"
 )
 
 func TestSplitCommand(t *testing.T) {

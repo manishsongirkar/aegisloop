@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"aegisloop/internal/config"
-	"aegisloop/internal/tokenizer"
+	"github.com/manishsongirkar/aegisloop/internal/config"
+	"github.com/manishsongirkar/aegisloop/internal/tokenizer"
 )
 
 // Scope is the set of files (and, per file, line numbers) AegisLoop is

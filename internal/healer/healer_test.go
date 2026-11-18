@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"aegisloop/internal/config"
-	"aegisloop/internal/runner"
-	"aegisloop/internal/tokenizer"
+	"github.com/manishsongirkar/aegisloop/internal/config"
+	"github.com/manishsongirkar/aegisloop/internal/runner"
+	"github.com/manishsongirkar/aegisloop/internal/tokenizer"
 )
 
 // ---- fakes ------------------------------------------------------------------------

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"aegisloop/internal/testutil"
+	"github.com/manishsongirkar/aegisloop/internal/testutil"
 )
 
 type rpc struct {

@@ -1,5 +1,10 @@
 # AegisLoop
 
+[![CI](https://github.com/manishsongirkar/aegisloop/actions/workflows/ci.yml/badge.svg)](https://github.com/manishsongirkar/aegisloop/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/manishsongirkar/aegisloop)](https://github.com/manishsongirkar/aegisloop/releases/latest)
+[![License: MIT](https://img.shields.io/github/license/manishsongirkar/aegisloop)](LICENSE)
+[![Go version](https://img.shields.io/github/go-mod/go-version/manishsongirkar/aegisloop)](go.mod)
+
 <p align="center"><img src="docs/aegisloop-overview.svg" alt="AegisLoop flow: AI patch, worktree, local fixers, standards guard, gates, then working tree or a bounded LLM repair loop" width="860"></p>
 
 **An AI guardrail and local self-healing verification wrapper for AI-generated code.**
@@ -9,6 +14,11 @@ isolated git worktree, fixes everything it can **locally for zero tokens**, enfo
 (WordPress VIP, tabs, short arrays, secure escaping…), runs your lint / test / build / security gates, and — only for
 what is still broken — asks an LLM for a fix using the **smallest possible prompt**. The loop is bounded by a
 circuit breaker. Your checkout is written to **only after every gate is green**.
+
+Works with **Claude Code, Cursor and VS Code Copilot** (through its built-in **MCP server**), or from the command line and CI.
+Built for **WordPress / WordPress VIP (PHP)**, **JavaScript / TypeScript** and **Go** projects, and runs fully local with Ollama.
+Keywords: AI code review, AI code verification, self-healing code, LLM token savings, prompt compression, phpcs, eslint,
+Model Context Protocol.
 
 ```
   AI patch (stdin / MCP)
@@ -85,7 +95,25 @@ AegisLoop is a single static Go binary (Go ≥ 1.22 to build, **no third-party G
 at run time. Your own tools (`phpcs`, `eslint`, `phpunit`, `jest` …) are optional — a missing tool is skipped with a
 note unless you mark it `required: true`.
 
-### From source (works today)
+### Prebuilt binary (macOS, Linux, Windows)
+
+Download the archive for your system from the [latest release](https://github.com/manishsongirkar/aegisloop/releases/latest),
+check it against `checksums.txt`, and put `aegis` on your `PATH`:
+
+```bash
+# example: macOS on Apple silicon
+tar -xzf aegis_1.0.0_darwin_arm64.tar.gz
+sudo mv aegis /usr/local/bin/
+aegis version
+```
+
+### With Go (≥ 1.22)
+
+```bash
+go install github.com/manishsongirkar/aegisloop/cmd/aegis@latest
+```
+
+### From source
 
 ```bash
 git clone https://github.com/manishsongirkar/aegisloop.git ~/Projects/aegisloop

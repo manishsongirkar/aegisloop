@@ -8,9 +8,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"aegisloop/internal/config"
-	"aegisloop/internal/runner"
-	"aegisloop/internal/sandbox"
+	"github.com/manishsongirkar/aegisloop/internal/config"
+	"github.com/manishsongirkar/aegisloop/internal/runner"
+	"github.com/manishsongirkar/aegisloop/internal/sandbox"
 )
 
 // PipelineOptions configures one end-to-end AegisLoop run.

@@ -16,12 +16,12 @@ import (
 	"strings"
 	"syscall"
 
-	"aegisloop/internal/config"
-	"aegisloop/internal/healer"
-	"aegisloop/internal/mcp"
-	"aegisloop/internal/runner"
-	"aegisloop/internal/sandbox"
-	"aegisloop/internal/tokenizer"
+	"github.com/manishsongirkar/aegisloop/internal/config"
+	"github.com/manishsongirkar/aegisloop/internal/healer"
+	"github.com/manishsongirkar/aegisloop/internal/mcp"
+	"github.com/manishsongirkar/aegisloop/internal/runner"
+	"github.com/manishsongirkar/aegisloop/internal/sandbox"
+	"github.com/manishsongirkar/aegisloop/internal/tokenizer"
 )
 
 // version is overridden at build time: -ldflags "-X main.version=1.2.3".

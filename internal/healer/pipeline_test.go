@@ -10,9 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"aegisloop/internal/config"
-	"aegisloop/internal/sandbox"
-	"aegisloop/internal/testutil"
+	"github.com/manishsongirkar/aegisloop/internal/config"
+	"github.com/manishsongirkar/aegisloop/internal/sandbox"
+	"github.com/manishsongirkar/aegisloop/internal/testutil"
 )
 
 const fixtureDir = "../../testdata/wp-vip"

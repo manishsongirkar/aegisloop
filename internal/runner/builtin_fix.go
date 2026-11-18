@@ -3,7 +3,7 @@ package runner
 import (
 	"strings"
 
-	"aegisloop/internal/tokenizer"
+	"github.com/manishsongirkar/aegisloop/internal/tokenizer"
 )
 
 // FixTabs converts leading runs of spaces to tabs (4 columns per tab) on the

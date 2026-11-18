@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"aegisloop/internal/config"
+	"github.com/manishsongirkar/aegisloop/internal/config"
 )
 
 // Usage is the token usage reported by a provider (0 when unknown).

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"aegisloop/internal/testutil"
+	"github.com/manishsongirkar/aegisloop/internal/testutil"
 )
 
 const fixtures = "../../testdata/wp-vip"

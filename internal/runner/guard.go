@@ -8,8 +8,8 @@ import (
 	"sort"
 	"strings"
 
-	"aegisloop/internal/config"
-	"aegisloop/internal/tokenizer"
+	"github.com/manishsongirkar/aegisloop/internal/config"
+	"github.com/manishsongirkar/aegisloop/internal/tokenizer"
 )
 
 // RuleInfo documents one built-in standards rule.

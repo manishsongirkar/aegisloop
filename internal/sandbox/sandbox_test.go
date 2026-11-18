@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"aegisloop/internal/testutil"
+	"github.com/manishsongirkar/aegisloop/internal/testutil"
 )
 
 var ctx = context.Background()

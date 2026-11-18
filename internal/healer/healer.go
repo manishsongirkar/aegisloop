@@ -8,9 +8,9 @@ import (
 	"sort"
 	"strings"
 
-	"aegisloop/internal/config"
-	"aegisloop/internal/runner"
-	"aegisloop/internal/tokenizer"
+	"github.com/manishsongirkar/aegisloop/internal/config"
+	"github.com/manishsongirkar/aegisloop/internal/runner"
+	"github.com/manishsongirkar/aegisloop/internal/tokenizer"
 )
 
 // Workspace is the sandbox as seen by the healer.

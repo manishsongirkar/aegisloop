@@ -14,10 +14,10 @@ import (
 	"strings"
 	"sync"
 
-	"aegisloop/internal/config"
-	"aegisloop/internal/healer"
-	"aegisloop/internal/sandbox"
-	"aegisloop/internal/tokenizer"
+	"github.com/manishsongirkar/aegisloop/internal/config"
+	"github.com/manishsongirkar/aegisloop/internal/healer"
+	"github.com/manishsongirkar/aegisloop/internal/sandbox"
+	"github.com/manishsongirkar/aegisloop/internal/tokenizer"
 )
 
 // Version is reported to MCP clients.
