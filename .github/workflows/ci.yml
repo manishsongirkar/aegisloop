@@ -12,6 +12,10 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
         go: ["1.22", stable]
+        exclude:
+          # Go 1.22 binaries abort with "missing LC_UUID" on current macOS (toolchain issue, not AegisLoop).
+          - os: macos-latest
+            go: "1.22"
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7

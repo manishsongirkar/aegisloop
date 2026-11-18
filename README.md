@@ -91,7 +91,7 @@ system prompt dominates.
 
 ## 2. Installation
 
-AegisLoop is a single static Go binary (Go ≥ 1.22 to build, **no third-party Go dependencies**) and needs `git` ≥ 2.20
+AegisLoop is a single static Go binary (Go ≥ 1.22 to build; on macOS use a current Go release, because Go 1.22 binaries do not start on recent macOS; **no third-party Go dependencies**) and needs `git` ≥ 2.20
 at run time. Your own tools (`phpcs`, `eslint`, `phpunit`, `jest` …) are optional — a missing tool is skipped with a
 note unless you mark it `required: true`.
 
